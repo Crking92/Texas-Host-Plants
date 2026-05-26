@@ -10,80 +10,62 @@
     <style>
         body { background-color: #0f172a; color: #f8fafc; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
         .card { background-color: #1e293b; border-radius: 0.75rem; padding: 1.5rem; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1); }
+        /* Smooth scrolling for the table */
+        ::-webkit-scrollbar { width: 8px; height: 8px; }
+        ::-webkit-scrollbar-track { background: #1e293b; }
+        ::-webkit-scrollbar-thumb { background: #475569; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #64748b; }
     </style>
 </head>
-<body class="p-8">
+<body class="p-8 relative">
 
     <div class="max-w-7xl mx-auto">
         <header class="mb-10 text-center">
             <h1 class="text-4xl font-extrabold text-emerald-400 mb-2">Central Texas Host Plant Identifier</h1>
             <p class="text-slate-400 text-lg">Interactive dashboard displaying critical host plants for native insects, bees, and butterflies.</p>
-            
-            <div class="mt-6">
-                <a href="Host-Calculator.xlsx" download class="inline-flex items-center px-6 py-3 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-lg shadow-lg transition-transform hover:-translate-y-1">
-                    <svg class="fill-current w-5 h-5 mr-2" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20"><path d="M13 8V2H7v6H2l8 8 8-8h-5zM0 18h20v2H0v-2z"/></svg>
-                    Download Excel Host Calculator
-                </a>
-            </div>
         </header>
 
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-            <div class="card border-t-4 border-emerald-500 text-center">
-                <h3 class="text-slate-400 text-sm uppercase tracking-wider">Total Interactions Tracked</h3>
-                <p class="text-3xl font-bold text-white mt-2">36,172</p>
-            </div>
-            <div class="card border-t-4 border-blue-500 text-center">
-                <h3 class="text-slate-400 text-sm uppercase tracking-wider">Unique Plant Taxa</h3>
-                <p class="text-3xl font-bold text-white mt-2">6,355</p>
-            </div>
-            <div class="card border-t-4 border-purple-500 text-center">
-                <h3 class="text-slate-400 text-sm uppercase tracking-wider">Top Lepidoptera Host</h3>
-                <p class="text-3xl font-bold text-white mt-2">Quercus (Oaks)</p>
-            </div>
-        </div>
-
-        <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
-            <div class="card">
-                <h2 class="text-xl font-bold mb-4 text-emerald-300">Top 10 Keystone Plants (Lepidoptera Hosted)</h2>
-                <canvas id="lepChart"></canvas>
-            </div>
-            <div class="card">
-                <h2 class="text-xl font-bold mb-4 text-blue-300">Top 10 Plants (Total Insect Interactions)</h2>
-                <canvas id="totalChart"></canvas>
-            </div>
-        </div>
-
-        <div class="card mt-8 border-t-4 border-purple-500">
-            <h2 class="text-2xl font-bold mb-2 text-purple-300">Live Verified Host Search</h2>
+        <div class="card mb-12 border-t-4 border-purple-500 shadow-2xl">
+            <h2 class="text-3xl font-bold mb-2 text-purple-300">Live Verified Host Search</h2>
             <p class="text-slate-400 mb-6">Type a plant genus or species (e.g., Quercus, Prunus) to instantly search the verified dataset.</p>
             
             <div class="flex gap-4 mb-6">
-                <input type="text" id="searchInput" placeholder="Search for a plant..." class="w-full bg-slate-800 text-white border border-slate-600 rounded-lg px-4 py-3 focus:outline-none focus:border-purple-500 text-lg">
+                <input type="text" id="searchInput" placeholder="Search for a plant..." class="w-full bg-slate-800 text-white border border-slate-600 rounded-lg px-4 py-3 focus:outline-none focus:border-purple-500 text-lg shadow-inner">
                 <button onclick="performSearch()" class="px-8 py-3 bg-purple-600 hover:bg-purple-500 text-white font-bold rounded-lg transition-transform hover:-translate-y-1 shadow-lg">Search</button>
             </div>
             
             <div id="searchSummary" class="hidden mb-6 bg-slate-900 rounded-lg p-6 border border-slate-700">
                 <div class="flex flex-col lg:flex-row justify-between items-center gap-8">
-                    <div class="flex-1 w-full grid grid-cols-2 md:grid-cols-5 gap-4">
-                        <div class="bg-slate-800 p-3 rounded text-center border-b-2 border-emerald-500">
-                            <p class="text-slate-400 text-xs uppercase tracking-wider">Total Hosted</p>
-                            <p id="stat-total" class="text-2xl font-bold text-white mt-1">0</p>
+                    
+                    <div id="searchedPlantThumb" class="w-32 h-32 lg:w-40 lg:h-40 rounded-full bg-slate-800 border-4 border-slate-700 flex flex-col items-center justify-center bg-cover bg-center flex-shrink-0 shadow-lg relative overflow-hidden">
+                        <span class="text-slate-500 text-xs text-center px-2 z-10" id="thumbText">Loading Image...</span>
+                        <div class="absolute inset-0 bg-black bg-opacity-20 z-0"></div>
+                    </div>
+
+                    <div class="flex-1 w-full grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-3">
+                        <div class="bg-slate-800 p-3 rounded text-center border-b-2 border-emerald-500 shadow">
+                            <p class="text-slate-400 text-[10px] uppercase tracking-wider">Total Hosted</p>
+                            <p id="stat-total" class="text-xl font-bold text-white mt-1">0</p>
                         </div>
-                        <div class="bg-slate-800 p-3 rounded text-center border-b-2 border-purple-400">
-                            <p class="text-slate-400 text-xs uppercase tracking-wider">Lepidoptera</p>
-                            <p id="stat-lep" class="text-2xl font-bold text-white mt-1">0</p>
+                        <div class="bg-slate-800 p-3 rounded text-center border-b-2 border-purple-400 shadow">
+                            <p class="text-slate-400 text-[10px] uppercase tracking-wider">Lepidoptera</p>
+                            <p id="stat-lep" class="text-xl font-bold text-white mt-1">0</p>
                         </div>
-                        <div class="bg-slate-800 p-3 rounded text-center border-b-2 border-orange-400">
-                            <p class="text-slate-400 text-xs uppercase tracking-wider">Gall Makers</p>
-                            <p id="stat-gall" class="text-2xl font-bold text-white mt-1">0</p>
+                        <div class="bg-slate-800 p-3 rounded text-center border-b-2 border-blue-400 shadow">
+                            <p class="text-slate-400 text-[10px] uppercase tracking-wider">Coleoptera</p>
+                            <p id="stat-col" class="text-xl font-bold text-white mt-1">0</p>
                         </div>
-                        <div class="bg-slate-800 p-3 rounded text-center border-b-2 border-amber-400">
-                            <p class="text-slate-400 text-xs uppercase tracking-wider">Bees</p>
-                            <p id="stat-bee" class="text-2xl font-bold text-white mt-1">0</p>
+                        <div class="bg-slate-800 p-3 rounded text-center border-b-2 border-rose-400 shadow">
+                            <p class="text-slate-400 text-[10px] uppercase tracking-wider">Sawflies</p>
+                            <p id="stat-saw" class="text-xl font-bold text-white mt-1">0</p>
                         </div>
-                        <div class="bg-slate-800 p-3 rounded text-center border-b-2 border-blue-400">
-                            <p class="text-slate-400 text-xs uppercase tracking-wider">Beetles</p>
-                            <p id="stat-beetle" class="text-2xl font-bold text-white mt-1">0</p>
+                        <div class="bg-slate-800 p-3 rounded text-center border-b-2 border-orange-400 shadow">
+                            <p class="text-slate-400 text-[10px] uppercase tracking-wider">Gall Makers</p>
+                            <p id="stat-gall" class="text-xl font-bold text-white mt-1">0</p>
+                        </div>
+                        <div class="bg-slate-800 p-3 rounded text-center border-b-2 border-amber-400 shadow">
+                            <p class="text-slate-400 text-[10px] uppercase tracking-wider">Bees</p>
+                            <p id="stat-bee" class="text-xl font-bold text-white mt-1">0</p>
                         </div>
                     </div>
                     
@@ -92,7 +74,7 @@
                     </div>
                 </div>
                 
-                <div id="keystoneBadge" class="hidden mt-6 bg-emerald-900/50 border border-emerald-500 rounded p-3 flex items-center">
+                <div id="keystoneBadge" class="hidden mt-6 bg-emerald-900/50 border border-emerald-500 rounded p-3 flex items-center shadow-inner">
                     <span class="text-2xl mr-3">🌟</span>
                     <div>
                         <h4 class="text-emerald-300 font-bold">Keystone Ecosystem Plant</h4>
@@ -101,12 +83,12 @@
                 </div>
             </div>
 
-            <div class="overflow-x-auto max-h-96 border border-slate-700 rounded-lg bg-slate-800">
+            <div class="overflow-x-auto max-h-96 border border-slate-700 rounded-lg bg-slate-800 shadow-inner mb-4">
                 <table class="w-full text-left border-collapse">
-                    <thead class="sticky top-0 bg-slate-900 shadow">
+                    <thead class="sticky top-0 bg-slate-900 shadow-md z-10">
                         <tr class="text-slate-300 text-sm uppercase tracking-wider">
                             <th class="p-4 border-b border-slate-700">Insect Group</th>
-                            <th class="p-4 border-b border-slate-700">Insect Species</th>
+                            <th class="p-4 border-b border-slate-700">Insect Species (Click for Photo)</th>
                             <th class="p-4 border-b border-slate-700">Interaction</th>
                             <th class="p-4 border-b border-slate-700">Region/Status</th>
                         </tr>
@@ -116,49 +98,135 @@
                     </tbody>
                 </table>
             </div>
-        </div>
-        
-        <div class="mt-12">
-            <h2 class="text-2xl font-bold mb-6 text-emerald-400 border-b border-slate-700 pb-2">Top Host Plants (Local Observations)</h2>
-            <div id="photo-gallery" class="grid grid-cols-2 md:grid-cols-5 gap-4">
-                </div>
+            
+            <div class="text-xs text-slate-500 text-center space-y-1">
+                <p>Gall-maker host data adapted from <a href="https://gallformers.org" target="_blank" class="text-emerald-400 hover:text-emerald-300 hover:underline transition-colors">Gallformers Contributors, Gallformers.org</a>. Click linked species names for source records.</p>
+                <p>Bee-host data adapted from Fowler, J. (2020), Pollen Specialist Bees of the Central United States. Data were reformatted for the Texas Host Plants search tool.</p>
+                <p>Accessed May 25, 2026.</p>
+            </div>
         </div>
 
-        <footer class="mt-12 text-center text-slate-500 text-sm">
+        <div class="pt-8 border-t border-slate-700">
+            <h2 class="text-2xl font-bold text-slate-300 mb-6 text-center">Master Dataset Overview</h2>
+            
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+                <div class="card border-t-4 border-emerald-500 text-center">
+                    <h3 class="text-slate-400 text-sm uppercase tracking-wider">Total Interactions</h3>
+                    <p class="text-3xl font-bold text-white mt-2">36,172</p>
+                </div>
+                <div class="card border-t-4 border-blue-500 text-center">
+                    <h3 class="text-slate-400 text-sm uppercase tracking-wider">Unique Plant Taxa</h3>
+                    <p class="text-3xl font-bold text-white mt-2">6,355</p>
+                </div>
+                <div class="card border-t-4 border-purple-500 text-center">
+                    <h3 class="text-slate-400 text-sm uppercase tracking-wider">Unique Insect Taxa</h3>
+                    <p class="text-3xl font-bold text-white mt-2">10,023</p>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                <div class="card">
+                    <h2 class="text-xl font-bold mb-4 text-slate-300 text-center">Interactions by Group</h2>
+                    <div class="h-64 relative">
+                        <canvas id="globalGroupChart"></canvas>
+                    </div>
+                </div>
+                <div class="card lg:col-span-2">
+                    <h2 class="text-xl font-bold mb-4 text-emerald-300">Top 10 Keystone Plants (Lepidoptera Hosted)</h2>
+                    <canvas id="lepChart"></canvas>
+                </div>
+            </div>
+
+            <div class="card mt-8">
+                <h2 class="text-xl font-bold mb-4 text-blue-300">Top 10 Plants (Total Insect Interactions)</h2>
+                <canvas id="totalChart"></canvas>
+            </div>
+            
+            <div class="mt-12">
+                <h2 class="text-2xl font-bold mb-6 text-emerald-400 border-b border-slate-700 pb-2">Top Host Plants (Local Observations)</h2>
+                <div id="photo-gallery" class="grid grid-cols-2 md:grid-cols-5 gap-4">
+                    </div>
+            </div>
+        </div>
+
+        <footer class="mt-12 text-center text-slate-500 text-sm pb-8">
             <p>Data sourced from Central Texas Host Identifier dataset. Photos provided by iNaturalist.</p>
         </footer>
     </div>
 
-    <script>
-        // --- 1. GLOBAL CHARTS ---
-        const lepData = { labels: ['Quercus', 'Prunus', 'Salix', 'Carya', 'Malus', 'Acer', 'Populus', 'Betula', 'Vaccinium', 'Ulmus'], values: [550, 308, 249, 217, 206, 200, 195, 193, 162, 153] };
-        const totalData = { labels: ['Quercus', 'Prunus', 'Salix', 'Q. buckleyi', 'Q. virginiana', 'Carya', 'U. crassifolia', 'Betula', 'Populus', 'Malus'], values: [653, 341, 340, 284, 248, 245, 239, 236, 220, 210] };
+    <div id="insectModal" class="hidden fixed inset-0 bg-black bg-opacity-80 z-50 flex items-center justify-center p-4 transition-opacity">
+        <div class="bg-slate-800 border border-slate-600 rounded-xl max-w-md w-full overflow-hidden shadow-2xl relative">
+            <button onclick="closeModal()" class="absolute top-2 right-4 text-white hover:text-red-400 text-3xl font-bold z-10 drop-shadow-md">&times;</button>
+            <div id="modalImage" class="w-full h-64 bg-slate-900 bg-cover bg-center flex items-center justify-center border-b border-slate-700 relative">
+                <span id="modalLoading" class="text-slate-400 animate-pulse">Searching iNaturalist...</span>
+                <div class="absolute inset-0 bg-gradient-to-t from-slate-900 via-transparent to-transparent"></div>
+            </div>
+            <div class="p-6 text-center">
+                <h3 id="modalScientificName" class="text-2xl font-bold text-emerald-400 italic mb-1">Species Name</h3>
+                <p id="modalCommonName" class="text-slate-300 text-lg mb-6 capitalize h-6">Common Name</p>
+                <a id="modalLink" href="#" target="_blank" class="inline-block w-full px-4 py-3 bg-blue-600 hover:bg-blue-500 text-white rounded-lg font-bold transition-transform hover:-translate-y-1 shadow-lg">View Details on iNaturalist</a>
+            </div>
+        </div>
+    </div>
 
-        new Chart(document.getElementById('lepChart').getContext('2d'), { type: 'bar', data: { labels: lepData.labels, datasets: [{ label: 'Lepidoptera Hosted', data: lepData.values, backgroundColor: 'rgba(16, 185, 129, 0.7)', borderColor: 'rgba(16, 185, 129, 1)', borderWidth: 1, borderRadius: 4 }] }, options: { responsive: true, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, grid: { color: 'rgba(255,255,255,0.1)' }, ticks: { color: '#cbd5e1' } }, x: { grid: { display: false }, ticks: { color: '#cbd5e1' } } } } });
-        new Chart(document.getElementById('totalChart').getContext('2d'), { type: 'bar', data: { labels: totalData.labels, datasets: [{ label: 'Total Interactions', data: totalData.values, backgroundColor: 'rgba(59, 130, 246, 0.7)', borderColor: 'rgba(59, 130, 246, 1)', borderWidth: 1, borderRadius: 4 }] }, options: { responsive: true, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, grid: { color: 'rgba(255,255,255,0.1)' }, ticks: { color: '#cbd5e1' } }, x: { grid: { display: false }, ticks: { color: '#cbd5e1' } } } } });
+    <script>
+        // --- 1. MODAL LOGIC (INSECT PHOTOS) ---
+        function closeModal() { document.getElementById('insectModal').classList.add('hidden'); }
+
+        async function openInsectModal(insectName) {
+            const modal = document.getElementById('insectModal');
+            document.getElementById('modalImage').style.backgroundImage = 'none';
+            document.getElementById('modalLoading').innerText = 'Searching iNaturalist...';
+            document.getElementById('modalScientificName').innerText = insectName;
+            document.getElementById('modalCommonName').innerText = '';
+            document.getElementById('modalLink').href = `https://www.inaturalist.org/search?q=${encodeURIComponent(insectName)}`;
+            modal.classList.remove('hidden');
+
+            try {
+                const cleanName = insectName.replace(/ cf\. /g, " ").split('(')[0].trim();
+                const res = await fetch(`https://api.inaturalist.org/v1/taxa/autocomplete?q=${encodeURIComponent(cleanName)}`);
+                const data = await res.json();
+
+                if(data.results.length > 0) {
+                    const taxon = data.results[0];
+                    if(taxon.default_photo) {
+                        const highResUrl = taxon.default_photo.medium_url.replace('medium', 'large');
+                        document.getElementById('modalImage').style.backgroundImage = `url('${highResUrl}')`;
+                        document.getElementById('modalLoading').innerText = '';
+                    } else document.getElementById('modalLoading').innerText = 'No photo available.';
+                    
+                    if(taxon.preferred_common_name) document.getElementById('modalCommonName').innerText = taxon.preferred_common_name;
+                    else document.getElementById('modalCommonName').innerText = 'No common name';
+                    
+                    document.getElementById('modalLink').href = `https://www.inaturalist.org/taxa/${taxon.id}`;
+                } else document.getElementById('modalLoading').innerText = 'Species not found on iNaturalist.';
+            } catch (e) { document.getElementById('modalLoading').innerText = 'Error loading data.'; }
+        }
+
+        window.onclick = function(event) {
+            if (event.target == document.getElementById('insectModal')) closeModal();
+        }
 
         // --- 2. LIVE SEARCH LOGIC ---
         let interactionData = [];
-        let searchChartInstance = null; // Holds the mini doughnut chart
+        let searchChartInstance = null; 
         
         Papa.parse("verified-data.csv", { download: true, header: true, skipEmptyLines: true, complete: function(results) { interactionData = results.data; } });
 
         function getField(row, possibleNames) { for(let name of possibleNames) { if(row[name] !== undefined) return row[name]; } return ''; }
 
-        // Function to create color-coded badges for insect groups
         function formatGroupBadge(groupName) {
-            let color = "bg-slate-700 text-slate-300"; // Default
+            let color = "bg-slate-700 text-slate-300"; 
             let nameLower = groupName.toLowerCase();
-            
             if(nameLower.includes("lepidoptera")) color = "bg-purple-900 text-purple-300 border border-purple-700";
             else if(nameLower.includes("gall")) color = "bg-orange-900 text-orange-300 border border-orange-700";
             else if(nameLower.includes("bee")) color = "bg-amber-900 text-amber-300 border border-amber-700";
             else if(nameLower.includes("coleoptera") || nameLower.includes("beetle")) color = "bg-blue-900 text-blue-300 border border-blue-700";
-            
-            return `<span class="px-2 py-1 rounded text-xs font-bold ${color}">${groupName}</span>`;
+            else if(nameLower.includes("sawfl")) color = "bg-rose-900 text-rose-300 border border-rose-700";
+            return `<span class="px-2 py-1 rounded text-[10px] uppercase font-bold ${color} shadow-sm whitespace-nowrap">${groupName}</span>`;
         }
 
-        function performSearch() {
+        async function performSearch() {
             const query = document.getElementById('searchInput').value.toLowerCase().trim();
             const tbody = document.getElementById('resultsBody');
             const summaryDiv = document.getElementById('searchSummary');
@@ -170,7 +238,6 @@
                 return;
             }
 
-            // Filter data
             const matches = interactionData.filter(row => {
                 const plant = getField(row, ['Plant_Taxon', 'Plant record used', 'Plant Name', 'Plant_Genus', 'Plant']);
                 return plant && plant.toLowerCase().includes(query);
@@ -182,57 +249,58 @@
                 return;
             }
 
+            // Fetch Thumbnail
+            document.getElementById('thumbText').innerText = "Loading...";
+            document.getElementById('searchedPlantThumb').style.backgroundImage = 'none';
+            try {
+                const firstMatchTaxon = getField(matches[0], ['Plant_Taxon', 'Plant record used']);
+                const searchName = firstMatchTaxon ? firstMatchTaxon : query;
+                const taxRes = await fetch(`https://api.inaturalist.org/v1/taxa/autocomplete?q=${encodeURIComponent(searchName)}`);
+                const taxData = await taxRes.json();
+                
+                if(taxData.results.length > 0 && taxData.results[0].default_photo) {
+                    const photoUrl = taxData.results[0].default_photo.medium_url;
+                    document.getElementById('searchedPlantThumb').style.backgroundImage = `url('${photoUrl}')`;
+                    document.getElementById('thumbText').innerText = "";
+                } else document.getElementById('thumbText').innerText = "No Photo";
+            } catch(e) { document.getElementById('thumbText').innerText = "Image Error"; }
+
             // Calculate Breakdown Stats
-            let counts = { lep: 0, gall: 0, bee: 0, beetle: 0, other: 0 };
-            
+            let counts = { lep: 0, col: 0, saw: 0, gall: 0, bee: 0, other: 0 };
             matches.forEach(row => {
                 const group = (getField(row, ['Insect_Group', 'Group']) || '').toLowerCase();
                 if(group.includes("lepidoptera")) counts.lep++;
+                else if(group.includes("coleoptera") || group.includes("beetle")) counts.col++;
+                else if(group.includes("sawfl")) counts.saw++;
                 else if(group.includes("gall")) counts.gall++;
                 else if(group.includes("bee")) counts.bee++;
-                else if(group.includes("coleoptera") || group.includes("beetle")) counts.beetle++;
                 else counts.other++;
             });
 
-            // Update DOM Stats
             document.getElementById('stat-total').innerText = matches.length;
             document.getElementById('stat-lep').innerText = counts.lep;
+            document.getElementById('stat-col').innerText = counts.col;
+            document.getElementById('stat-saw').innerText = counts.saw;
             document.getElementById('stat-gall').innerText = counts.gall;
             document.getElementById('stat-bee').innerText = counts.bee;
-            document.getElementById('stat-beetle').innerText = counts.beetle;
 
-            // Show summary and keystone badge if applicable
             summaryDiv.classList.remove('hidden');
-            if(counts.lep >= 50) {
-                document.getElementById('keystoneBadge').classList.remove('hidden');
-            } else {
-                document.getElementById('keystoneBadge').classList.add('hidden');
-            }
+            if(counts.lep >= 50) document.getElementById('keystoneBadge').classList.remove('hidden');
+            else document.getElementById('keystoneBadge').classList.add('hidden');
 
-            // Update Mini Doughnut Chart
             const ctx = document.getElementById('searchDoughnut').getContext('2d');
-            if(searchChartInstance) searchChartInstance.destroy(); // Clear old chart
+            if(searchChartInstance) searchChartInstance.destroy(); 
             
             searchChartInstance = new Chart(ctx, {
                 type: 'doughnut',
                 data: {
-                    labels: ['Lepidoptera', 'Gall Makers', 'Bees', 'Beetles', 'Other'],
-                    datasets: [{
-                        data: [counts.lep, counts.gall, counts.bee, counts.beetle, counts.other],
-                        backgroundColor: ['#c084fc', '#fb923c', '#fbbf24', '#60a5fa', '#94a3b8'],
-                        borderWidth: 0
-                    }]
+                    labels: ['Lepidoptera', 'Coleoptera', 'Sawflies', 'Gall Makers', 'Bees', 'Other'],
+                    datasets: [{ data: [counts.lep, counts.col, counts.saw, counts.gall, counts.bee, counts.other], backgroundColor: ['#c084fc', '#60a5fa', '#fb7185', '#fb923c', '#fbbf24', '#94a3b8'], borderWidth: 0 }]
                 },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: { legend: { display: false } },
-                    cutout: '70%'
-                }
+                options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, cutout: '70%' }
             });
 
-            // Populate Table
-            const topMatches = matches.slice(0, 250); // Increased cap slightly
+            const topMatches = matches.slice(0, 300); 
             topMatches.forEach(row => {
                 const groupRaw = getField(row, ['Insect_Group', 'Group']) || 'Unknown';
                 const species = getField(row, ['Insect_Species', 'Animal / insect / gall-maker', 'Insect']) || 'Unknown';
@@ -243,7 +311,9 @@
                 tr.className = "hover:bg-slate-700 transition-colors";
                 tr.innerHTML = `
                     <td class="p-4">${formatGroupBadge(groupRaw)}</td>
-                    <td class="p-4 font-bold text-emerald-400">${species}</td>
+                    <td class="p-4 font-bold text-emerald-400 cursor-pointer hover:text-emerald-300 underline decoration-emerald-500/50 transition-colors" onclick="openInsectModal('${species}')">
+                        ${species}
+                    </td>
                     <td class="p-4 text-sm text-slate-400">${interaction}</td>
                     <td class="p-4 text-xs text-slate-400">${region}</td>
                 `;
@@ -255,7 +325,34 @@
             if (event.key === "Enter") { event.preventDefault(); performSearch(); }
         });
 
-        // --- 3. INATURALIST PHOTO LOGIC ---
+        // --- 3. GLOBAL CHARTS & GALLERY ---
+        // Top Lepidoptera Hosts
+        new Chart(document.getElementById('lepChart').getContext('2d'), { type: 'bar', data: { labels: ['Quercus', 'Prunus', 'Salix', 'Carya', 'Malus', 'Acer', 'Populus', 'Betula', 'Vaccinium', 'Ulmus'], datasets: [{ label: 'Lepidoptera Hosted', data: [550, 308, 249, 217, 206, 200, 195, 193, 162, 153], backgroundColor: 'rgba(16, 185, 129, 0.7)', borderColor: 'rgba(16, 185, 129, 1)', borderWidth: 1, borderRadius: 4 }] }, options: { responsive: true, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, grid: { color: 'rgba(255,255,255,0.1)' }, ticks: { color: '#cbd5e1' } }, x: { grid: { display: false }, ticks: { color: '#cbd5e1' } } } } });
+        // Top Total Interactions
+        new Chart(document.getElementById('totalChart').getContext('2d'), { type: 'bar', data: { labels: ['Quercus', 'Prunus', 'Salix', 'Q. buckleyi', 'Q. virginiana', 'Carya', 'U. crassifolia', 'Betula', 'Populus', 'Malus'], datasets: [{ label: 'Total Interactions', data: [653, 341, 340, 284, 248, 245, 239, 236, 220, 210], backgroundColor: 'rgba(59, 130, 246, 0.7)', borderColor: 'rgba(59, 130, 246, 1)', borderWidth: 1, borderRadius: 4 }] }, options: { responsive: true, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, grid: { color: 'rgba(255,255,255,0.1)' }, ticks: { color: '#cbd5e1' } }, x: { grid: { display: false }, ticks: { color: '#cbd5e1' } } } } });
+        
+        // Global Breakdown Chart
+        new Chart(document.getElementById('globalGroupChart').getContext('2d'), {
+            type: 'doughnut',
+            data: {
+                labels: ['Lepidoptera (17,591)', 'Gall Makers (10,192)', 'Coleoptera (2,223)', 'Sawflies (1,586)', 'Bees (1,133)', 'Other (3,447)'],
+                datasets: [{
+                    data: [17591, 10192, 2223, 1586, 1133, 3447],
+                    backgroundColor: ['#c084fc', '#fb923c', '#60a5fa', '#fb7185', '#fbbf24', '#94a3b8'],
+                    borderWidth: 1,
+                    borderColor: '#1e293b'
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { position: 'right', labels: { color: '#cbd5e1', font: { size: 11 } } }
+                },
+                cutout: '60%'
+            }
+        });
+
         async function fetchPlantPhotos() {
             const gallery = document.getElementById('photo-gallery');
             const topPlants = ['Quercus', 'Prunus', 'Salix', 'Carya', 'Malus', 'Acer', 'Populus', 'Betula', 'Vaccinium', 'Ulmus'];
