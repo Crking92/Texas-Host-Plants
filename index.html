@@ -47,7 +47,6 @@
                 <h2 class="text-xl font-bold mb-4 text-emerald-300">Top 10 Keystone Plants (Lepidoptera Hosted)</h2>
                 <canvas id="lepChart"></canvas>
             </div>
-
             <div class="card">
                 <h2 class="text-xl font-bold mb-4 text-blue-300">Top 10 Plants (Total Insect Interactions)</h2>
                 <canvas id="totalChart"></canvas>
@@ -63,6 +62,45 @@
                 <button onclick="performSearch()" class="px-8 py-3 bg-purple-600 hover:bg-purple-500 text-white font-bold rounded-lg transition-transform hover:-translate-y-1 shadow-lg">Search</button>
             </div>
             
+            <div id="searchSummary" class="hidden mb-6 bg-slate-900 rounded-lg p-6 border border-slate-700">
+                <div class="flex flex-col lg:flex-row justify-between items-center gap-8">
+                    <div class="flex-1 w-full grid grid-cols-2 md:grid-cols-5 gap-4">
+                        <div class="bg-slate-800 p-3 rounded text-center border-b-2 border-emerald-500">
+                            <p class="text-slate-400 text-xs uppercase tracking-wider">Total Hosted</p>
+                            <p id="stat-total" class="text-2xl font-bold text-white mt-1">0</p>
+                        </div>
+                        <div class="bg-slate-800 p-3 rounded text-center border-b-2 border-purple-400">
+                            <p class="text-slate-400 text-xs uppercase tracking-wider">Lepidoptera</p>
+                            <p id="stat-lep" class="text-2xl font-bold text-white mt-1">0</p>
+                        </div>
+                        <div class="bg-slate-800 p-3 rounded text-center border-b-2 border-orange-400">
+                            <p class="text-slate-400 text-xs uppercase tracking-wider">Gall Makers</p>
+                            <p id="stat-gall" class="text-2xl font-bold text-white mt-1">0</p>
+                        </div>
+                        <div class="bg-slate-800 p-3 rounded text-center border-b-2 border-amber-400">
+                            <p class="text-slate-400 text-xs uppercase tracking-wider">Bees</p>
+                            <p id="stat-bee" class="text-2xl font-bold text-white mt-1">0</p>
+                        </div>
+                        <div class="bg-slate-800 p-3 rounded text-center border-b-2 border-blue-400">
+                            <p class="text-slate-400 text-xs uppercase tracking-wider">Beetles</p>
+                            <p id="stat-beetle" class="text-2xl font-bold text-white mt-1">0</p>
+                        </div>
+                    </div>
+                    
+                    <div class="w-40 h-40 relative flex-shrink-0">
+                        <canvas id="searchDoughnut"></canvas>
+                    </div>
+                </div>
+                
+                <div id="keystoneBadge" class="hidden mt-6 bg-emerald-900/50 border border-emerald-500 rounded p-3 flex items-center">
+                    <span class="text-2xl mr-3">🌟</span>
+                    <div>
+                        <h4 class="text-emerald-300 font-bold">Keystone Ecosystem Plant</h4>
+                        <p class="text-emerald-100 text-sm">This plant supports a critical number of Lepidoptera species, making it an essential food source for local insectivores and baby songbirds!</p>
+                    </div>
+                </div>
+            </div>
+
             <div class="overflow-x-auto max-h-96 border border-slate-700 rounded-lg bg-slate-800">
                 <table class="w-full text-left border-collapse">
                     <thead class="sticky top-0 bg-slate-900 shadow">
@@ -92,66 +130,111 @@
     </div>
 
     <script>
-        // --- 1. CHARTS LOGIC ---
+        // --- 1. GLOBAL CHARTS ---
         const lepData = { labels: ['Quercus', 'Prunus', 'Salix', 'Carya', 'Malus', 'Acer', 'Populus', 'Betula', 'Vaccinium', 'Ulmus'], values: [550, 308, 249, 217, 206, 200, 195, 193, 162, 153] };
         const totalData = { labels: ['Quercus', 'Prunus', 'Salix', 'Q. buckleyi', 'Q. virginiana', 'Carya', 'U. crassifolia', 'Betula', 'Populus', 'Malus'], values: [653, 341, 340, 284, 248, 245, 239, 236, 220, 210] };
 
-        new Chart(document.getElementById('lepChart').getContext('2d'), {
-            type: 'bar', data: { labels: lepData.labels, datasets: [{ label: 'Lepidoptera Hosted', data: lepData.values, backgroundColor: 'rgba(16, 185, 129, 0.7)', borderColor: 'rgba(16, 185, 129, 1)', borderWidth: 1, borderRadius: 4 }] },
-            options: { responsive: true, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, grid: { color: 'rgba(255,255,255,0.1)' }, ticks: { color: '#cbd5e1' } }, x: { grid: { display: false }, ticks: { color: '#cbd5e1' } } } }
-        });
-
-        new Chart(document.getElementById('totalChart').getContext('2d'), {
-            type: 'bar', data: { labels: totalData.labels, datasets: [{ label: 'Total Interactions', data: totalData.values, backgroundColor: 'rgba(59, 130, 246, 0.7)', borderColor: 'rgba(59, 130, 246, 1)', borderWidth: 1, borderRadius: 4 }] },
-            options: { responsive: true, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, grid: { color: 'rgba(255,255,255,0.1)' }, ticks: { color: '#cbd5e1' } }, x: { grid: { display: false }, ticks: { color: '#cbd5e1' } } } }
-        });
+        new Chart(document.getElementById('lepChart').getContext('2d'), { type: 'bar', data: { labels: lepData.labels, datasets: [{ label: 'Lepidoptera Hosted', data: lepData.values, backgroundColor: 'rgba(16, 185, 129, 0.7)', borderColor: 'rgba(16, 185, 129, 1)', borderWidth: 1, borderRadius: 4 }] }, options: { responsive: true, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, grid: { color: 'rgba(255,255,255,0.1)' }, ticks: { color: '#cbd5e1' } }, x: { grid: { display: false }, ticks: { color: '#cbd5e1' } } } } });
+        new Chart(document.getElementById('totalChart').getContext('2d'), { type: 'bar', data: { labels: totalData.labels, datasets: [{ label: 'Total Interactions', data: totalData.values, backgroundColor: 'rgba(59, 130, 246, 0.7)', borderColor: 'rgba(59, 130, 246, 1)', borderWidth: 1, borderRadius: 4 }] }, options: { responsive: true, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, grid: { color: 'rgba(255,255,255,0.1)' }, ticks: { color: '#cbd5e1' } }, x: { grid: { display: false }, ticks: { color: '#cbd5e1' } } } } });
 
         // --- 2. LIVE SEARCH LOGIC ---
         let interactionData = [];
+        let searchChartInstance = null; // Holds the mini doughnut chart
         
-        // This looks directly for your new verified-data.csv
-        Papa.parse("verified-data.csv", {
-            download: true,
-            header: true,
-            skipEmptyLines: true,
-            complete: function(results) {
-                interactionData = results.data;
-                console.log("Verified database loaded!");
-            }
-        });
+        Papa.parse("verified-data.csv", { download: true, header: true, skipEmptyLines: true, complete: function(results) { interactionData = results.data; } });
 
-        // Helper to handle slightly different column names from Excel
-        function getField(row, possibleNames) {
-            for(let name of possibleNames) {
-                if(row[name] !== undefined) return row[name];
-            }
-            return '';
+        function getField(row, possibleNames) { for(let name of possibleNames) { if(row[name] !== undefined) return row[name]; } return ''; }
+
+        // Function to create color-coded badges for insect groups
+        function formatGroupBadge(groupName) {
+            let color = "bg-slate-700 text-slate-300"; // Default
+            let nameLower = groupName.toLowerCase();
+            
+            if(nameLower.includes("lepidoptera")) color = "bg-purple-900 text-purple-300 border border-purple-700";
+            else if(nameLower.includes("gall")) color = "bg-orange-900 text-orange-300 border border-orange-700";
+            else if(nameLower.includes("bee")) color = "bg-amber-900 text-amber-300 border border-amber-700";
+            else if(nameLower.includes("coleoptera") || nameLower.includes("beetle")) color = "bg-blue-900 text-blue-300 border border-blue-700";
+            
+            return `<span class="px-2 py-1 rounded text-xs font-bold ${color}">${groupName}</span>`;
         }
 
         function performSearch() {
             const query = document.getElementById('searchInput').value.toLowerCase().trim();
             const tbody = document.getElementById('resultsBody');
+            const summaryDiv = document.getElementById('searchSummary');
             tbody.innerHTML = '';
 
             if (!query) {
+                summaryDiv.classList.add('hidden');
                 tbody.innerHTML = '<tr><td colspan="4" class="p-4 text-center text-slate-500 italic">Please enter a plant name.</td></tr>';
                 return;
             }
 
+            // Filter data
             const matches = interactionData.filter(row => {
                 const plant = getField(row, ['Plant_Taxon', 'Plant record used', 'Plant Name', 'Plant_Genus', 'Plant']);
                 return plant && plant.toLowerCase().includes(query);
             });
 
             if (matches.length === 0) {
+                summaryDiv.classList.add('hidden');
                 tbody.innerHTML = '<tr><td colspan="4" class="p-4 text-center text-slate-500">No verified insects found for that plant.</td></tr>';
                 return;
             }
 
-            const topMatches = matches.slice(0, 200);
+            // Calculate Breakdown Stats
+            let counts = { lep: 0, gall: 0, bee: 0, beetle: 0, other: 0 };
+            
+            matches.forEach(row => {
+                const group = (getField(row, ['Insect_Group', 'Group']) || '').toLowerCase();
+                if(group.includes("lepidoptera")) counts.lep++;
+                else if(group.includes("gall")) counts.gall++;
+                else if(group.includes("bee")) counts.bee++;
+                else if(group.includes("coleoptera") || group.includes("beetle")) counts.beetle++;
+                else counts.other++;
+            });
 
+            // Update DOM Stats
+            document.getElementById('stat-total').innerText = matches.length;
+            document.getElementById('stat-lep').innerText = counts.lep;
+            document.getElementById('stat-gall').innerText = counts.gall;
+            document.getElementById('stat-bee').innerText = counts.bee;
+            document.getElementById('stat-beetle').innerText = counts.beetle;
+
+            // Show summary and keystone badge if applicable
+            summaryDiv.classList.remove('hidden');
+            if(counts.lep >= 50) {
+                document.getElementById('keystoneBadge').classList.remove('hidden');
+            } else {
+                document.getElementById('keystoneBadge').classList.add('hidden');
+            }
+
+            // Update Mini Doughnut Chart
+            const ctx = document.getElementById('searchDoughnut').getContext('2d');
+            if(searchChartInstance) searchChartInstance.destroy(); // Clear old chart
+            
+            searchChartInstance = new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    labels: ['Lepidoptera', 'Gall Makers', 'Bees', 'Beetles', 'Other'],
+                    datasets: [{
+                        data: [counts.lep, counts.gall, counts.bee, counts.beetle, counts.other],
+                        backgroundColor: ['#c084fc', '#fb923c', '#fbbf24', '#60a5fa', '#94a3b8'],
+                        borderWidth: 0
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { display: false } },
+                    cutout: '70%'
+                }
+            });
+
+            // Populate Table
+            const topMatches = matches.slice(0, 250); // Increased cap slightly
             topMatches.forEach(row => {
-                const group = getField(row, ['Insect_Group', 'Group']) || 'Unknown';
+                const groupRaw = getField(row, ['Insect_Group', 'Group']) || 'Unknown';
                 const species = getField(row, ['Insect_Species', 'Animal / insect / gall-maker', 'Insect']) || 'Unknown';
                 const interaction = getField(row, ['Interaction_Type', 'Interaction']) || '-';
                 const region = getField(row, ['Region_Status', 'Region/status', 'Region']) || '-';
@@ -159,10 +242,10 @@
                 const tr = document.createElement('tr');
                 tr.className = "hover:bg-slate-700 transition-colors";
                 tr.innerHTML = `
-                    <td class="p-4 text-sm">${group}</td>
+                    <td class="p-4">${formatGroupBadge(groupRaw)}</td>
                     <td class="p-4 font-bold text-emerald-400">${species}</td>
                     <td class="p-4 text-sm text-slate-400">${interaction}</td>
-                    <td class="p-4 text-xs font-bold text-slate-300 bg-slate-800 rounded px-2">${region}</td>
+                    <td class="p-4 text-xs text-slate-400">${region}</td>
                 `;
                 tbody.appendChild(tr);
             });
