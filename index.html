@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Central Texas Host Identifier Dashboard</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        body { background-color: #0f172a; color: #f8fafc; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+        .card { background-color: #1e293b; border-radius: 0.75rem; padding: 1.5rem; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1); }
+    </style>
+</head>
+<body class="p-8">
+
+    <div class="max-w-7xl mx-auto">
+        <header class="mb-10 text-center">
+            <h1 class="text-4xl font-extrabold text-emerald-400 mb-2">Central Texas Host Plant Identifier</h1>
+            <p class="text-slate-400 text-lg">Interactive dashboard displaying critical host plants for native insects, bees, and butterflies.</p>
+        </header>
+
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+            <div class="card border-t-4 border-emerald-500 text-center">
+                <h3 class="text-slate-400 text-sm uppercase tracking-wider">Total Interactions Tracked</h3>
+                <p class="text-3xl font-bold text-white mt-2">36,172</p>
+            </div>
+            <div class="card border-t-4 border-blue-500 text-center">
+                <h3 class="text-slate-400 text-sm uppercase tracking-wider">Unique Plant Taxa</h3>
+                <p class="text-3xl font-bold text-white mt-2">6,355</p>
+            </div>
+            <div class="card border-t-4 border-purple-500 text-center">
+                <h3 class="text-slate-400 text-sm uppercase tracking-wider">Top Lepidoptera Host</h3>
+                <p class="text-3xl font-bold text-white mt-2">Quercus (Oaks)</p>
+            </div>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+            <div class="card">
+                <h2 class="text-xl font-bold mb-4 text-emerald-300">Top 10 Keystone Plants (Lepidoptera Hosted)</h2>
+                <canvas id="lepChart"></canvas>
+            </div>
+
+            <div class="card">
+                <h2 class="text-xl font-bold mb-4 text-blue-300">Top 10 Plants (Total Insect Interactions)</h2>
+                <canvas id="totalChart"></canvas>
+            </div>
+        </div>
+        
+        <div class="mt-12">
+            <h2 class="text-2xl font-bold mb-6 text-emerald-400 border-b border-slate-700 pb-2">Top Host Plants (Local Observations)</h2>
+            <div id="photo-gallery" class="grid grid-cols-2 md:grid-cols-5 gap-4">
+                </div>
+        </div>
+
+        <footer class="mt-12 text-center text-slate-500 text-sm">
+            <p>Data sourced from Central Texas Host Identifier dataset. Photos provided by iNaturalist.</p>
+        </footer>
+    </div>
+
+    <script>
+        // Data derived from the uploaded Plant_Index.csv
+        const lepData = {
+            labels: ['Quercus', 'Prunus', 'Salix', 'Carya', 'Malus', 'Acer', 'Populus', 'Betula', 'Vaccinium', 'Ulmus'],
+            values: [550, 308, 249, 217, 206, 200, 195, 193, 162, 153]
+        };
+
+        const totalData = {
+            labels: ['Quercus', 'Prunus', 'Salix', 'Q. buckleyi', 'Q. virginiana', 'Carya', 'U. crassifolia', 'Betula', 'Populus', 'Malus'],
+            values: [653, 341, 340, 284, 248, 245, 239, 236, 220, 210]
+        };
+
+        // Initialize Lepidoptera Chart
+        const ctxLep = document.getElementById('lepChart').getContext('2d');
+        new Chart(ctxLep, {
+            type: 'bar',
+            data: {
+                labels: lepData.labels,
+                datasets: [{
+                    label: 'Lepidoptera Species Hosted',
+                    data: lepData.values,
+                    backgroundColor: 'rgba(16, 185, 129, 0.7)',
+                    borderColor: 'rgba(16, 185, 129, 1)',
+                    borderWidth: 1,
+                    borderRadius: 4
+                }]
+            },
+            options: {
+                responsive: true,
+                plugins: { legend: { display: false } },
+                scales: {
+                    y: { beginAtZero: true, grid: { color: 'rgba(255,255,255,0.1)' }, ticks: { color: '#cbd5e1' } },
+                    x: { grid: { display: false }, ticks: { color: '#cbd5e1' } }
+                }
+            }
+        });
+
+        // Initialize Total Interactions Chart
+        const ctxTotal = document.getElementById('totalChart').getContext('2d');
+        new Chart(ctxTotal, {
+            type: 'bar',
+            data: {
+                labels: totalData.labels,
+                datasets: [{
+                    label: 'Total Insect Interactions',
+                    data: totalData.values,
+                    backgroundColor: 'rgba(59, 130, 246, 0.7)',
+                    borderColor: 'rgba(59, 130, 246, 1)',
+                    borderWidth: 1,
+                    borderRadius: 4
+                }]
+            },
+            options: {
+                responsive: true,
+                plugins: { legend: { display: false } },
+                scales: {
+                    y: { beginAtZero: true, grid: { color: 'rgba(255,255,255,0.1)' }, ticks: { color: '#cbd5e1' } },
+                    x: { grid: { display: false }, ticks: { color: '#cbd5e1' } }
+                }
+            }
+        });
+    </script>
+
+    <script>
+        async function fetchPlantPhotos() {
+            const gallery = document.getElementById('photo-gallery');
+            const topPlants = ['Quercus', 'Prunus', 'Salix', 'Carya', 'Malus', 'Acer', 'Populus', 'Betula', 'Vaccinium', 'Ulmus'];
+            
+            // iNaturalist Place IDs and Bounds
+            const places = { hays: null, texas: 18 };
+            
+            // Geographic bounding box for Central Texas 
+            const centralTxBounds = "&nelat=31.5&nelng=-97.0&swlat=29.0&swlng=-100.0";
+
+            try {
+                // 1. Dynamically get the official Place ID for Hays County
+                const haysRes = await fetch("https://api.inaturalist.org/v1/places/autocomplete?q=Hays County, TX");
+                const haysData = await haysRes.json();
+                if(haysData.results.length > 0) places.hays = haysData.results[0].id;
+
+                for(let plant of topPlants) {
+                    // Create an empty card in the gallery with a loading state
+                    const card = document.createElement('div');
+                    card.className = "card text-center p-4 relative overflow-hidden h-48 flex items-end justify-center bg-slate-800 border border-slate-700 transition-transform hover:scale-105 cursor-pointer";
+                    card.innerHTML = `
+                        <span class="relative z-10 font-extrabold text-white text-lg drop-shadow-lg">${plant}</span>
+                        <span class="text-xs font-bold px-2 py-1 bg-emerald-900 text-emerald-300 rounded absolute top-2 right-2 z-10 shadow" id="loc-${plant}">Searching...</span>
+                    `;
+                    gallery.appendChild(card);
+
+                    // 2. Get the specific Taxon ID for the plant genus
+                    const taxRes = await fetch(`https://api.inaturalist.org/v1/taxa/autocomplete?q=${plant}`);
+                    const taxData = await taxRes.json();
+                    if(taxData.results.length === 0) continue;
+                    const taxonId = taxData.results[0].id;
+
+                    let photoUrl = null;
+                    let foundLocation = "";
+
+                    // Attempt A: Hays County
+                    if(places.hays) {
+                        const obsRes = await fetch(`https://api.inaturalist.org/v1/observations?taxon_id=${taxonId}&place_id=${places.hays}&photos=true&per_page=1&quality_grade=research`);
+                        const obsData = await obsRes.json();
+                        if(obsData.results.length > 0) {
+                            photoUrl = obsData.results[0].photos[0].url.replace('square', 'medium'); // Get higher res photo
+                            foundLocation = "Hays County";
+                        }
+                    }
+
+                    // Attempt B: Central Texas (Edwards Plateau / Blackland Prairie boundaries)
+                    if(!photoUrl) {
+                        const obsRes = await fetch(`https://api.inaturalist.org/v1/observations?taxon_id=${taxonId}${centralTxBounds}&photos=true&per_page=1&quality_grade=research`);
+                        const obsData = await obsRes.json();
+                        if(obsData.results.length > 0) {
+                            photoUrl = obsData.results[0].photos[0].url.replace('square', 'medium');
+                            foundLocation = "Central TX";
+                        }
+                    }
+
+                    // Attempt C: Texas
+                    if(!photoUrl) {
+                        const obsRes = await fetch(`https://api.inaturalist.org/v1/observations?taxon_id=${taxonId}&place_id=${places.texas}&photos=true&per_page=1&quality_grade=research`);
+                        const obsData = await obsRes.json();
+                        if(obsData.results.length > 0) {
+                            photoUrl = obsData.results[0].photos[0].url.replace('square', 'medium');
+                            foundLocation = "Texas";
+                        }
+                    }
+
+                    // 3. Update the UI with the downloaded photo and location badge
+                    if(photoUrl) {
+                        card.style.backgroundImage = `url('${photoUrl}')`;
+                        card.style.backgroundSize = 'cover';
+                        card.style.backgroundPosition = 'center';
+                        document.getElementById(`loc-${plant}`).innerText = foundLocation;
+                        
+                        // Add a dark gradient overlay so the white text is readable against the photo
+                        const overlay = document.createElement('div');
+                        overlay.className = "absolute inset-0 bg-gradient-to-t from-slate-900 via-transparent to-transparent";
+                        card.insertBefore(overlay, card.firstChild);
+                    } else {
+                        document.getElementById(`loc-${plant}`).innerText = "No photo";
+                        document.getElementById(`loc-${plant}`).className = "text-xs font-bold px-2 py-1 bg-slate-700 text-slate-300 rounded absolute top-2 right-2 z-10 shadow";
+                    }
+                }
+            } catch (error) {
+                console.error("Error fetching iNaturalist data:", error);
+            }
+        }
+
+        // Run the function when the page loads
+        fetchPlantPhotos();
+    </script>
+</body>
+</html>
